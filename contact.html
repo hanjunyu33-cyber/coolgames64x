@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="google-site-verification" content="LFolYFY1ySO4aIcMbyo8EdJKYLqHW9MS6_B1y7e5MPQ" />
+    <meta name="description" content="Contact Cool Games - Get in touch with us!" />
+    <title>Contact Us 📧 | Cool Games</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Poppins', sans-serif; background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%); min-height: 100vh; color: white; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px 0; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 30px rgba(0,0,0,0.3); }
+        .header-content { max-width: 1400px; margin: 0 auto; padding: 0 30px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px; }
+        .logo { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+        .logo-icon { font-size: 2rem; }
+        .logo-text { font-size: 1.5rem; font-weight: 800; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
+        .logo-tag { background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 500; }
+        .nav-links { display: flex; gap: 25px; list-style: none; }
+        .nav-links a { color: white; text-decoration: none; font-weight: 500; transition: all 0.3s; position: relative; }
+        .nav-links a:hover, .nav-links a.active { color: #ffd700; }
+        .nav-links a::after { content: ''; position: absolute; bottom: -5px; left: 0; width: 0; height: 2px; background: #ffd700; transition: width 0.3s; }
+        .nav-links a:hover::after, .nav-links a.active::after { width: 100%; }
+        .page-title { padding: 50px 30px 30px; text-align: center; }
+        .page-title h1 { font-size: 2.5rem; font-weight: 800; margin-bottom: 10px; background: linear-gradient(135deg, #fff 0%, #667eea 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .page-title p { color: rgba(255,255,255,0.7); font-size: 1.1rem; }
+        .content { max-width: 800px; margin: 0 auto; padding: 0 30px 60px; }
+        .contact-card { background: rgba(255,255,255,0.05); border-radius: 25px; padding: 40px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 30px; }
+        .contact-card h2 { font-size: 1.5rem; margin-bottom: 20px; color: #667eea; }
+        .contact-card p { color: rgba(255,255,255,0.8); line-height: 1.8; margin-bottom: 20px; }
+        .contact-info { display: flex; flex-direction: column; gap: 20px; }
+        .contact-item { display: flex; align-items: center; gap: 15px; padding: 15px 20px; background: rgba(255,255,255,0.05); border-radius: 15px; transition: all 0.3s; }
+        .contact-item:hover { background: rgba(102,126,234,0.2); transform: translateX(5px); }
+        .contact-icon { font-size: 2rem; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; background: rgba(102,126,234,0.3); border-radius: 50%; }
+        .contact-details h3 { font-size: 1rem; margin-bottom: 5px; }
+        .contact-details p { color: rgba(255,255,255,0.6); font-size: 0.9rem; margin: 0; }
+        .form-card { background: rgba(255,255,255,0.05); border-radius: 25px; padding: 40px; border: 1px solid rgba(255,255,255,0.1); }
+        .form-card h2 { font-size: 1.5rem; margin-bottom: 25px; color: #667eea; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-size: 0.9rem; margin-bottom: 8px; color: rgba(255,255,255,0.8); }
+        .form-group input, .form-group textarea { width: 100%; padding: 15px 20px; border: 2px solid rgba(255,255,255,0.1); border-radius: 15px; background: rgba(255,255,255,0.05); color: white; font-size: 1rem; font-family: 'Poppins', sans-serif; transition: all 0.3s; }
+        .form-group input:focus, .form-group textarea:focus { outline: none; border-color: #667eea; box-shadow: 0 0 20px rgba(102,126,234,0.2); }
+        .form-group textarea { min-height: 150px; resize: vertical; }
+        .form-group input::placeholder, .form-group textarea::placeholder { color: rgba(255,255,255,0.4); }
+        .submit-btn { width: 100%; padding: 18px 30px; background: linear-gradient(135deg, #667eea, #764ba2); border: none; border-radius: 15px; color: white; font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: all 0.3s; font-family: 'Poppins', sans-serif; }
+        .submit-btn:hover { transform: translateY(-3px); box-shadow: 0 15px 35px rgba(102,126,234,0.4); }
+        .submit-btn:active { transform: translateY(0); }
+        .social-section { text-align: center; padding: 30px 0; }
+        .social-section h3 { font-size: 1.2rem; margin-bottom: 20px; color: rgba(255,255,255,0.8); }
+        .social-links { display: flex; justify-content: center; gap: 20px; }
+        .social-link { width: 60px; height: 60px; background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; cursor: pointer; transition: all 0.3s; }
+        .social-link:hover { background: linear-gradient(135deg, #667eea, #764ba2); border-color: transparent; transform: translateY(-5px) scale(1.1); }
+        .footer { background: rgba(0,0,0,0.3); padding: 50px 30px 25px; margin-top: 40px; text-align: center; }
+        .footer p { color: rgba(255,255,255,0.4); font-size: 0.85rem; }
+        @media (max-width: 768px) { .header-content { flex-direction: column; gap: 12px; } .nav-links { gap: 12px; font-size: 0.85rem; } .contact-card, .form-card { padding: 25px; } }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo" onclick="window.location.href='index.html'">
+                <span class="logo-icon">🎮</span>
+                <span class="logo-text">Cool Games</span>
+                <span class="logo-tag">FREE</span>
+            </div>
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="games.html">Games</a></li>
+                    <li><a href="featured.html">Featured</a></li>
+                    <li><a href="about.html">About</a></li>
+                    <li><a href="contact.html" class="active">Contact</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+    
+    <div class="page-title">
+        <h1>📧 Contact Us</h1>
+        <p>We'd love to hear from you! Get in touch with us.</p>
+    </div>
+    
+    <div class="content">
+        <div class="contact-card">
+            <h2>💬 Get In Touch</h2>
+            <p>Have questions, suggestions, or feedback about our games? We're here to help! Fill out the form below and we'll get back to you as soon as possible.</p>
+            
+            <div class="contact-info">
+                <div class="contact-item">
+                    <div class="contact-icon">📧</div>
+                    <div class="contact-details">
+                        <h3>Email</h3>
+                        <p>contact@coolgames.com</p>
+                    </div>
+                </div>
+                <div class="contact-item">
+                    <div class="contact-icon">🌐</div>
+                    <div class="contact-details">
+                        <h3>Website</h3>
+                        <p>hanjunyu33-cyber.github.io/coolgames64x</p>
+                    </div>
+                </div>
+                <div class="contact-item">
+                    <div class="contact-icon">⏰</div>
+                    <div class="contact-details">
+                        <h3>Response Time</h3>
+                        <p>We usually respond within 24-48 hours</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-card">
+            <h2>📝 Send Us a Message</h2>
+            <form id="contactForm" onsubmit="submitForm(event)">
+                <div class="form-group">
+                    <label for="name">Your Name</label>
+                    <input type="text" id="name" name="name" placeholder="Enter your name" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Your Email</label>
+                    <input type="email" id="email" name="email" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label for="subject">Subject</label>
+                    <input type="text" id="subject" name="subject" placeholder="What is this about?" required>
+                </div>
+                <div class="form-group">
+                    <label for="message">Your Message</label>
+                    <textarea id="message" name="message" placeholder="Write your message here..." required></textarea>
+                </div>
+                <button type="submit" class="submit-btn">🚀 Send Message</button>
+            </form>
+        </div>
+        
+        <div class="social-section">
+            <h3>Or follow us on social media</h3>
+            <div class="social-links">
+                <div class="social-link" title="YouTube">📺</div>
+                <div class="social-link" title="Instagram">📸</div>
+                <div class="social-link" title="Twitter">🐦</div>
+                <div class="social-link" title="Discord">💬</div>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="footer">
+        <p>© 2024 Cool Games. Made with ❤️ for gamers everywhere.</p>
+        <p style="margin-top: 10px;">🎮 60+ Free Games | No Downloads | Instant Play</p>
+    </footer>
+    
+    <script>
+        function submitForm(event) {
+            event.preventDefault();
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const subject = document.getElementById('subject').value;
+            const message = document.getElementById('message').value;
+            
+            // Create mailto link
+            const mailtoLink = `mailto:contact@coolgames.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent('Name: ' + name + '\nEmail: ' + email + '\n\nMessage:\n' + message)}`;
+            
+            window.location.href = mailtoLink;
+            
+            alert('Thanks for your message! Your email app should open to send us your message.');
+        }
+    </script>
+</body>
+</html>
