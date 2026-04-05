@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="google-site-verification" content="LFolYFY1ySO4aIcMbyo8EdJKYLqHW9MS6_B1y7e5MPQ" />
+    <title>Cool Games - 50 Free Games!</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .header h1 { font-size: 2.5rem; margin-bottom: 10px; }
+        .header p { opacity: 0.9; }
+        .search-bar {
+            padding: 20px;
+            text-align: center;
+        }
+        .search-bar input {
+            width: 300px;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1rem;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            outline: none;
+        }
+        .search-bar input::placeholder { color: rgba(255,255,255,0.6); }
+        .cat-filter {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 0 20px 20px;
+        }
+        .cat-btn {
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .cat-btn:hover, .cat-btn.active {
+            background: #667eea;
+            border-color: #667eea;
+        }
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 20px;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .game-card {
+            background: linear-gradient(145deg, #2d2d4d, #1a1a3d);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 2px solid rgba(255,255,255,0.1);
+        }
+        .game-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+            border-color: #667eea;
+        }
+        .game-thumb {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+        .game-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .game-cat span {
+            background: rgba(102, 126, 234, 0.3);
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            text-transform: capitalize;
+        }
+        .footer {
+            text-align: center;
+            padding: 30px;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎮 Cool Games</h1>
+        <p>50 FREE GAMES - ALL CUSTOM MADE!</p>
+    </div>
+    
+    <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="Search games..." onkeyup="filterGames()">
+    </div>
+    
+    <div class="cat-filter">
+        <button class="cat-btn active" onclick="filterCat('all')">All</button>
+        <button class="cat-btn" onclick="filterCat('action')">Action</button>
+        <button class="cat-btn" onclick="filterCat('puzzle')">Puzzle</button>
+        <button class="cat-btn" onclick="filterCat('sports')">Sports</button>
+        <button class="cat-btn" onclick="filterCat('racing')">Racing</button>
+        <button class="cat-btn" onclick="filterCat('classic')">Classic</button>
+    </div>
+    
+    <div class="games-grid" id="gamesGrid"></div>
+    
+    <div class="ad-container" style="text-align:center; padding:20px; background:rgba(255,255,255,0.05); margin:20px; border-radius:10px;">
+        <ins class="adsbygoogle" style="display:block; width:728px; height:90px; margin:0 auto; background:#333; border-radius:8px;" data-ad-client="ca-pub-2848704978790894" data-ad-slot=""></ins>
+    </div>
+    
+    <div class="footer">
+        <p>🎮 Made by Ethan - Age 7 💪</p>
+    </div>
+
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2848704978790894"
+     crossorigin="anonymous"></script>
+    
+    <script>
+        const games = [
+            { name: "Egg Blaster", icon: "🥚", category: "action", url: "egg-shooter.html" },
+            { name: "Snake", icon: "🐍", category: "classic", url: "snake.html" },
+            { name: "Connect Four", icon: "🎮", category: "puzzle", url: "connect-four.html" },
+            { name: "Space Invaders", icon: "👾", category: "action", url: "space-invaders.html" },
+            { name: "Doodle Jump", icon: "🐸", category: "puzzle", url: "doodle-jump.html" },
+            { name: "Memory Match", icon: "🃏", category: "puzzle", url: "memory-match.html" },
+            { name: "Block Stack", icon: "🧱", category: "puzzle", url: "blockstack.html" },
+            { name: "Ball Blast", icon: "🔴", category: "action", url: "ball-blast.html" },
+            { name: "Gold Miner", icon: "⛏️", category: "puzzle", url: "gold-miner.html" },
+            { name: "Fish Eat Fish", icon: "🐟", category: "action", url: "fish-eat-fish.html" },
+            { name: "Bubble Shooter", icon: "🫧", category: "puzzle", url: "bubble-shooter.html" },
+            { name: "T-Rex Runner", icon: "🦖", category: "action", url: "t-rex-runner.html" },
+            { name: "Flappy Bird", icon: "🐦", category: "classic", url: "flappy-bird.html" },
+            { name: "Helix Jump", icon: "🌀", category: "puzzle", url: "helix-jump.html" },
+            { name: "Pong", icon: "🏓", category: "sports", url: "pong.html" },
+            { name: "2048", icon: "🔢", category: "puzzle", url: "2048.html" },
+            { name: "Knife Hit", icon: "🔪", category: "action", url: "knife-hit.html" },
+            { name: "Hole.io", icon: "🕳️", category: "action", url: "hole-io.html" },
+            { name: "Candy Crush", icon: "🍬", category: "puzzle", url: "candy-crush.html" },
+            { name: "Fruit Ninja", icon: "🍉", category: "action", url: "fruit-ninja.html" },
+            { name: "Stickman Run", icon: "🏃", category: "action", url: "stickman-run.html" },
+            { name: "Tower Defense", icon: "🏰", category: "strategy", url: "tower-defense.html" },
+            { name: "Zombie Hunter", icon: "🧟", category: "action", url: "zombie-hunter.html" },
+            { name: "Angry Birds", icon: "🐦", category: "action", url: "angry-birds.html" },
+            { name: "Brick Breaker", icon: "🧱", category: "action", url: "brick-breaker.html" },
+            { name: "Bowling", icon: "🎳", category: "sports", url: "bowling.html" },
+            { name: "Tennis", icon: "🎾", category: "sports", url: "tennis.html" },
+            { name: "Golf", icon: "⛳", category: "sports", url: "golf.html" },
+            { name: "Basketball", icon: "🏀", category: "sports", url: "basketball.html" },
+            { name: "Soccer", icon: "⚽", category: "sports", url: "soccer.html" },
+            { name: "Archery", icon: "🏹", category: "action", url: "archery.html" },
+            { name: "Tic Tac Toe", icon: "⭕", category: "puzzle", url: "tic-tac-toe.html" },
+            { name: "Simon Says", icon: "🟢", category: "puzzle", url: "simon-says.html" },
+            { name: "Whack a Mole", icon: "🔨", category: "action", url: "whack-a-mole.html" },
+            { name: "Darts", icon: "🎯", category: "sports", url: "darts.html" },
+            { name: "Minesweeper", icon: "💣", category: "puzzle", url: "minesweeper.html" },
+            { name: "Sudoku", icon: "🔢", category: "puzzle", url: "sudoku.html" },
+            { name: "Racing", icon: "🏎️", category: "racing", url: "racing.html" },
+            { name: "Ping Pong", icon: "🏓", category: "sports", url: "ping-pong.html" },
+            { name: "Boxing", icon: "🥊", category: "action", url: "boxing.html" },
+            { name: "Cricket", icon: "🏏", category: "sports", url: "cricket.html" },
+            { name: "Baseball", icon: "⚾", category: "sports", url: "baseball.html" },
+            { name: "Pool", icon: "🎱", category: "sports", url: "pool.html" },
+            { name: "Air Hockey", icon: "🏒", category: "sports", url: "air-hockey.html" },
+            { name: "Chess", icon: "♟️", category: "puzzle", url: "chess.html" },
+            { name: "Hockey", icon: "🏒", category: "sports", url: "hockey.html" },
+            { name: "Checkers", icon: "🎯", category: "puzzle", url: "checkers.html" },
+            { name: "Volleyball", icon: "🏐", category: "sports", url: "volleyball.html" },
+            { name: "Ludo", icon: "🎲", category: "classic", url: "ludo.html" },
+            { name: "Breakout", icon: "🧱", category: "action", url: "breakout.html" },
+            { name: "Monster Truck", icon: "🚗", category: "racing", url: "monster-truck.html" },
+            { name: "Motorbike", icon: "🏍️", category: "racing", url: "motorbike.html" },
+            { name: "Boat Racing", icon: "🚤", category: "racing", url: "boat-racing.html" },
+            { name: "Highway Rider", icon: "🏍️", category: "racing", url: "highway-rider.html" },
+            { name: "Drift Racing", icon: "🏎️", category: "racing", url: "drift-racing.html" },
+            { name: "Frogger", icon: "🐸", category: "classic", url: "frogger.html" },
+            { name: "Pac-Man", icon: "👻", category: "classic", url: "pac-man.html" },
+            { name: "Tetris", icon: "🧱", category: "classic", url: "tetris.html" },
+            { name: "Asteroids", icon: "🚀", category: "classic", url: "asteroids.html" },
+            { name: "Galaga", icon: "🚀", category: "classic", url: "galaga.html" },
+            { name: "Helicopter", icon: "🚁", category: "action", url: "helicopter.html" },
+            { name: "Slot Machine", icon: "🎰", category: "classic", url: "slot-machine.html" }
+        ];
+        
+        let currentCat = 'all';
+        
+        function renderGames() {
+            const grid = document.getElementById('gamesGrid');
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            
+            let filtered = games;
+            
+            if (currentCat !== 'all') {
+                filtered = filtered.filter(g => g.category === currentCat);
+            }
+            
+            if (search) {
+                filtered = filtered.filter(g => g.name.toLowerCase().includes(search));
+            }
+            
+            grid.innerHTML = filtered.map(game => `
+                <div class="game-card" onclick="playGame('${game.url}', '${game.name}')">
+                    <div class="game-thumb">${game.icon}</div>
+                    <div class="game-name">${game.name}</div>
+                    <div class="game-cat"><span>${game.category}</span></div>
+                </div>
+            `).join('');
+        }
+        
+        function filterCat(cat) {
+            currentCat = cat;
+            document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            renderGames();
+        }
+        
+        function filterGames() {
+            renderGames();
+        }
+        
+        function playGame(url, name) {
+            window.open(url, '_blank');
+        }
+        
+        renderGames();
+    </script>
+</body>
+</html>
