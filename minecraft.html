@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minecraft - Cool Games</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { overflow: hidden; background: #000; font-family: 'Courier New', monospace; }
+        #gameCanvas { display: block; width: 100vw; height: 100vh; }
+        #loading {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            color: white; z-index: 1000; transition: opacity 0.5s;
+        }
+        #loading.hidden { opacity: 0; pointer-events: none; }
+        #loading h1 { font-size: 2.5rem; margin-bottom: 20px; text-shadow: 0 0 20px #667eea; }
+        .progress { width: 300px; height: 20px; background: rgba(255,255,255,0.2); border-radius: 10px; overflow: hidden; }
+        .progress-bar { height: 100%; background: linear-gradient(90deg, #667eea, #764ba2); width: 0%; transition: width 0.3s; }
+        #loading p { margin-top: 15px; opacity: 0.8; }
+        #hud {
+            position: fixed; top: 20px; left: 20px; color: white; font-size: 14px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8); z-index: 100; pointer-events: none;
+        }
+        #hud .time { font-size: 18px; margin-bottom: 5px; }
+        #hud .coords { font-size: 12px; opacity: 0.8; }
+        #hotbar {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 4px; background: rgba(0,0,0,0.5); padding: 8px;
+            border-radius: 8px; z-index: 100;
+        }
+        .hotbar-slot {
+            width: 50px; height: 50px; background: rgba(100,100,100,0.5);
+            border: 3px solid #555; border-radius: 4px;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 24px; cursor: pointer; transition: all 0.1s;
+        }
+        .hotbar-slot.selected { border-color: #fff; background: rgba(150,150,150,0.5); transform: scale(1.1); }
+        #crosshair {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 20px; height: 20px; z-index: 100; pointer-events: none;
+        }
+        #crosshair::before, #crosshair::after {
+            content: ''; position: absolute; background: white; box-shadow: 0 0 3px black;
+        }
+        #crosshair::before { width: 2px; height: 20px; left: 9px; top: 0; }
+        #crosshair::after { width: 20px; height: 2px; top: 9px; left: 0; }
+        #instructions {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9); color: white; padding: 30px;
+            border-radius: 15px; text-align: center; z-index: 200; max-width: 400px;
+        }
+        #instructions h2 { margin-bottom: 15px; color: #667eea; }
+        #instructions p { margin: 8px 0; font-size: 14px; }
+        #instructions .key { background: #333; padding: 3px 8px; border-radius: 4px; border: 1px solid #555; }
+        #instructions button {
+            margin-top: 20px; padding: 12px 30px; font-size: 16px;
+            background: linear-gradient(135deg, #667eea, #764ba2); border: none;
+            color: white; border-radius: 25px; cursor: pointer; font-family: inherit;
+        }
+        #instructions button:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(102, 126, 234, 0.5); }
+        #day-indicator { position: fixed; top: 20px; right: 20px; font-size: 40px; z-index: 100; }
+        #minimap {
+            position: fixed; top: 60px; right: 20px; width: 150px; height: 150px;
+            background: rgba(0,0,0,0.7); border: 3px solid #555; border-radius: 10px;
+            z-index: 100; overflow: hidden;
+        }
+        #minimap canvas { width: 100%; height: 100%; }
+    </style>
+</head>
+<body>
+    <div id="loading">
+        <h1>⛏️ Loading Minecraft...</h1>
+        <div class="progress"><div class="progress-bar" id="progressBar"></div></div>
+        <p id="loadingText">Generating world...</p>
+    </div>
+
+    <div id="instructions">
+        <h2>🎮 How to Play</h2>
+        <p><span class="key">↑↓←→</span> Move around</p>
+        <p><span class="key">Space</span> Jump</p>
+        <p><span class="key">1-9</span> Select block type</p>
+        <p><span class="key">Left Click</span> Break block</p>
+        <p><span class="key">Right Click</span> Place block</p>
+        <p><span class="key">M</span> Toggle minimap</p>
+        <p style="margin-top:15px; opacity:0.7;">Build anything you can imagine! 🌟</p>
+        <button onclick="startGame()">🎮 Start Game</button>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+    
+    <div id="hud">
+        <div class="time" id="timeDisplay">☀️ Day 1</div>
+        <div class="coords" id="coords">X: 0 Y: 0 Z: 0</div>
+    </div>
+
+    <div id="day-indicator">☀️</div>
+
+    <div id="minimap"><canvas id="minimapCanvas" width="150" height="150"></canvas></div>
+
+    <div id="hotbar"></div>
+
+    <div id="crosshair"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+    // ==================== GAME CONFIG ====================
+    const CONFIG = {
+        DAY_MS: 15 * 60 * 1000,
+        CHUNK_SIZE: 32,
+        RENDER_DIST: 2,
+        WORLD_H: 64,
+        PLAYER_H: 1.8,
+        SPEED: 0.12,
+        JUMP: 0.2,
+        GRAVITY: 0.012,
+        BLOCKS: [
+            { id: 1, name: 'Grass', emoji: '🟩', color: 0x5d8c3e },
+            { id: 2, name: 'Dirt', emoji: '🟫', color: 0x8b6914 },
+            { id: 3, name: 'Stone', emoji: '⬜', color: 0x808080 },
+            { id: 4, name: 'Wood', emoji: '🟫', color: 0x8b4513 },
+            { id: 5, name: 'Leaves', emoji: '🌿', color: 0x228b22, alpha: true },
+            { id: 6, name: 'Sand', emoji: '🟨', color: 0xf4d03f },
+            { id: 7, name: 'Water', emoji: '💧', color: 0x3498db, alpha: true },
+            { id: 8, name: 'Cobble', emoji: '🪨', color: 0x696969 },
+            { id: 9, name: 'Planks', emoji: '🟫', color: 0xdeb887 },
+            { id: 10, name: 'Brick', emoji: '🧱', color: 0xb22222 },
+            { id: 11, name: 'Glass', emoji: '🪟', color: 0xadd8e6, alpha: true },
+            { id: 12, name: 'Coal', emoji: '⬛', color: 0x333333 },
+            { id: 13, name: 'Iron', emoji: '🟫', color: 0xd4a574 },
+            { id: 14, name: 'Gold', emoji: '🟨', color: 0xffd700 },
+            { id: 15, name: 'Diamond', emoji: '💎', color: 0x00ffff },
+        ]
+    };
+
+    // ==================== STATE ====================
+    let scene, camera, renderer, sun;
+    let player = { x: 0, y: 30, z: 0, vy: 0, onGround: false };
+    let blocks = new Map();
+    let selectedBlock = 0;
+    let gameOn = false;
+    let gameMs = 0, dayNum = 1, isNight = false;
+    let keys = {};
+    let chunks = new Set();
+    let blockMeshes = [];
+    let steveMesh;
+    let showMinimap = true;
+    let lastPX = null, lastPZ = null;
+
+    // ==================== NOISE ====================
+    class Noise {
+        constructor(seed = 12345) {
+            this.p = new Uint8Array(512);
+            for (let i = 0; i < 256; i++) this.p[i] = i;
+            for (let i = 255; i > 0; i--) {
+                seed = (seed * 16807) % 2147483647;
+                const j = seed % (i + 1);
+                [this.p[i], this.p[j]] = [this.p[j], this.p[i]];
+            }
+            for (let i = 0; i < 256; i++) this.p[i + 256] = this.p[i];
+        }
+        noise2D(x, y) {
+            const F2 = 0.5 * (Math.sqrt(3) - 1), G2 = (3 - Math.sqrt(3)) / 6;
+            const s = (x + y) * F2, i = Math.floor(x + s), j = Math.floor(y + s);
+            const t = (i + j) * G2;
+            const X0 = i - t, Y0 = j - t, x0 = x - X0, y0 = y - Y0;
+            const i1 = x0 > y0 ? 1 : 0, j1 = x0 > y0 ? 0 : 1;
+            const x1 = x0 - i1 + G2, y1 = y0 - j1 + G2;
+            const x2 = x0 - 1 + 2 * G2, y2 = y0 - 1 + 2 * G2;
+            const ii = i & 255, jj = j & 255;
+            const grad = (h, x, y) => {
+                const v = this.p[h] & 7;
+                return v < 4 ? (v < 2 ? v : 0) * x + (v < 2 ? 0 : v) * y : 0;
+            };
+            const dot = (g, x, y) => g * x + (g > 3 ? g : 0) * y;
+            let n0 = 0, n1 = 0, n2 = 0;
+            let t0 = 0.5 - x0 * x0 - y0 * y0;
+            if (t0 >= 0) { t0 *= t0; n0 = t0 * t0 * dot(grad(this.p[ii + this.p[jj]], x0, y0), x0, y0); }
+            let t1 = 0.5 - x1 * x1 - y1 * y1;
+            if (t1 >= 0) { t1 *= t1; n1 = t1 * t1 * dot(grad(this.p[ii + i1 + this.p[jj + j1]], x1, y1), x1, y1); }
+            let t2 = 0.5 - x2 * x2 - y2 * y2;
+            if (t2 >= 0) { t2 *= t2; n2 = t2 * t2 * dot(grad(this.p[ii + 1 + this.p[jj + 1]], x2, y2), x2, y2); }
+            return 70 * (n0 + n1 + n2);
+        }
+    }
+    const noise = new Noise();
+
+    // ==================== INIT ====================
+    function init() {
+        scene = new THREE.Scene();
+        scene.fog = new THREE.Fog(0x87ceeb, 30, 120);
+
+        camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.1, 500);
+        camera.position.set(0, 25, 0);
+
+        renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('gameCanvas'), antialias: true });
+        renderer.setSize(innerWidth, innerHeight);
+        renderer.setClearColor(0x87ceeb);
+
+        // Lights
+        scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+        sun = new THREE.DirectionalLight(0xffffff, 0.8);
+        sun.position.set(100, 200, 100);
+        scene.add(sun);
+
+        // Sky
+        const skyGeo = new THREE.SphereGeometry(400, 32, 32);
+        const skyMat = new THREE.ShaderMaterial({
+            uniforms: {
+                topColor: { value: new THREE.Color(0x0077ff) },
+                bottomColor: { value: new THREE.Color(0x87ceeb) },
+                offset: { value: 20 }, exponent: { value: 0.6 }
+            },
+            vertexShader: `varying vec3 vWP; void main() { vWP = (modelMatrix * vec4(pos, 1)).xyz; gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1); }`,
+            fragmentShader: `uniform vec3 topColor, bottomColor; uniform float offset, exponent; varying vec3 vWP; void main() { float h = normalize(vWP + offset).y; gl_FragColor = vec4(mix(bottomColor, topColor, max(pow(max(h, 0.0), exponent), 0.0)), 1.0); }`,
+            side: THREE.BackSide
+        });
+        scene.add(new THREE.Mesh(skyGeo, skyMat));
+
+        generateWorld(0, 0);
+        updateChunks();
+        spawnPlayer();
+        setupHotbar();
+        renderSteve();
+
+        addEventListener('resize', () => {
+            camera.aspect = innerWidth / innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(innerWidth, innerHeight);
+        });
+        addEventListener('keydown', e => { keys[e.key] = true; if (e.key >= '1' && e.key <= '9') selectBlock(parseInt(e.key) - 1); if (e.key.toLowerCase() === 'm') toggleMinimap(); });
+        addEventListener('keyup', e => keys[e.key] = false);
+        addEventListener('click', onClick);
+        addEventListener('contextmenu', e => e.preventDefault());
+
+        simulateLoading();
+        animate();
+    }
+
+    function simulateLoading() {
+        let p = 0;
+        const pb = document.getElementById('progressBar');
+        const texts = ['Generating terrain...', 'Adding trees...', 'Creating caves...', 'Placing ores...', 'Almost ready...'];
+        setInterval(() => {
+            p += Math.random() * 12;
+            if (p > 100) p = 100;
+            pb.style.width = p + '%';
+            document.getElementById('loadingText').textContent = texts[Math.floor(p / 22)] || 'Loading...';
+            if (p >= 100) setTimeout(() => document.getElementById('loading').classList.add('hidden'), 400);
+        }, 150);
+    }
+
+    function setupHotbar() {
+        const h = document.getElementById('hotbar');
+        h.innerHTML = '';
+        CONFIG.BLOCKS.slice(0, 9).forEach((b, i) => {
+            const s = document.createElement('div');
+            s.className = 'hotbar-slot' + (i === selectedBlock ? ' selected' : '');
+            s.textContent = b.emoji;
+            s.onclick = () => selectBlock(i);
+            s.title = b.name;
+            h.appendChild(s);
+        });
+    }
+
+    function selectBlock(i) {
+        selectedBlock = i;
+        document.querySelectorAll('.hotbar-slot').forEach((s, j) => s.classList.toggle('selected', j === i));
+    }
+
+    function toggleMinimap() {
+        showMinimap = !showMinimap;
+        document.getElementById('minimap').style.display = showMinimap ? 'block' : 'none';
+    }
+
+    // ==================== WORLD ====================
+    function genWorld(cx, cz) {
+        const k = `${cx},${cz}`;
+        if (chunks.has(k)) return;
+        chunks.add(k);
+
+        const bx = cx * CONFIG.CHUNK_SIZE, bz = cz * CONFIG.CHUNK_SIZE;
+
+        for (let x = 0; x < CONFIG.CHUNK_SIZE; x++) {
+            for (let z = 0; z < CONFIG.CHUNK_SIZE; z++) {
+                const wx = bx + x, wz = bz + z;
+                let h = Math.floor(noise.noise2D(wx * 0.015, wz * 0.015) * 15 + noise.noise2D(wx * 0.05, wz * 0.05) * 5 + 18);
+
+                // Terrain
+                for (let y = 0; y <= h; y++) {
+                    if (y === h) setB(wx, y, wz, 1);
+                    else if (y > h - 3) setB(wx, y, wz, 2);
+                    else {
+                        const oN = noise.noise2D(wx * 0.3 + y * 0.2, wz * 0.3);
+                        if (oN > 0.75 && y < h - 10) setB(wx, y, wz, 15); // Diamond
+                        else if (oN > 0.6 && y < h - 7) setB(wx, y, wz, 14); // Gold
+                        else if (oN > 0.45 && y < h - 5) setB(wx, y, wz, 13); // Iron
+                        else if (oN > 0.3) setB(wx, y, wz, 12); // Coal
+                        else setB(wx, y, wz, 3); // Stone
+                    }
+                }
+
+                // Water
+                if (h < 14) for (let y = 10; y < h; y++) setB(wx, y, wz, 7);
+
+                // Sand near water
+                if (h < 15 && h > 11) for (let y = h - 2; y < h; y++) if (getB(wx, y, wz) === 2) setB(wx, y, wz, 6);
+
+                // Trees
+                if (noise.noise2D(wx * 0.8, wz * 0.8) > 0.6 && h > 16) {
+                    const th = 4 + Math.floor(Math.random() * 3);
+                    for (let ty = 1; ty < th; ty++) setB(wx, h + ty, wz, 4);
+                    for (let lx = -2; lx <= 2; lx++) for (let lz = -2; lz <= 2; lz++) for (let ly = 0; ly <= 2; ly++) {
+                        if (Math.abs(lx) + Math.abs(lz) + Math.abs(ly) < 4) setB(wx + lx, h + th + ly, wz + lz, 5);
+                    }
+                }
+            }
+        }
+    }
+
+    function setB(x, y, z, t) { blocks.set(`${Math.floor(x)},${Math.floor(y)},${Math.floor(z)}`, t); }
+    function getB(x, y, z) { return blocks.get(`${Math.floor(x)},${Math.floor(y)},${Math.floor(z)}`); }
+
+    function updateChunks() {
+        const pcx = Math.floor(player.x / CONFIG.CHUNK_SIZE);
+        const pcz = Math.floor(player.z / CONFIG.CHUNK_SIZE);
+        if (pcx === lastPX && pcz === lastPZ) return;
+        lastPX = pcx; lastPZ = pcz;
+        for (let dx = -CONFIG.RENDER_DIST; dx <= CONFIG.RENDER_DIST; dx++)
+            for (let dz = -CONFIG.RENDER_DIST; dz <= CONFIG.RENDER_DIST; dz++)
+                genWorld(pcx + dx, pcz + dz);
+        rebuildMeshes();
+    }
+
+    function spawnPlayer() {
+        for (let y = 60; y > 0; y--) {
+            if (getB(0, y, 0)) { player.y = y + 2; break; }
+        }
+    }
+
+    // ==================== RENDERING ====================
+    function rebuildMeshes() {
+        blockMeshes.forEach(m => scene.remove(m));
+        blockMeshes = [];
+
+        const geo = new THREE.BoxGeometry(1, 1, 1);
+        const pcx = Math.floor(player.x / CONFIG.CHUNK_SIZE);
+        const pcz = Math.floor(player.z / CONFIG.CHUNK_SIZE);
+
+        const range = CONFIG.CHUNK_SIZE * (CONFIG.RENDER_DIST + 1);
+        for (let x = pcx * CONFIG.CHUNK_SIZE - range; x <= pcx * CONFIG.CHUNK_SIZE + range; x++)
+            for (let y = 0; y < CONFIG.WORLD_H; y++)
+                for (let z = pcz * CONFIG.CHUNK_SIZE - range; z <= pcz * CONFIG.CHUNK_SIZE + range; z++) {
+                    const t = getB(x, y, z);
+                    if (t && t !== 7) {
+                        const info = CONFIG.BLOCKS[t - 1];
+                        if (info) {
+                            const mat = new THREE.MeshLambertMaterial({ color: info.color, transparent: info.alpha || false, opacity: info.alpha ? 0.6 : 1 });
+                            const mesh = new THREE.Mesh(geo, mat);
+                            mesh.position.set(x + 0.5, y + 0.5, z + 0.5);
+                            scene.add(mesh);
+                            blockMeshes.push(mesh);
+                        }
+                    }
+                }
+    }
+
+    function renderSteve() {
+        const g = new THREE.Group();
+
+        // Body (blue shirt)
+        const bodyMat = new THREE.MeshLambertMaterial({ color: 0x4a90d9 });
+        const body = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.8, 0.3), bodyMat);
+        body.position.y = 0.4;
+        g.add(body);
+
+        // Head (skin)
+        const headMat = new THREE.MeshLambertMaterial({ color: 0xffdbac });
+        const head = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5), headMat);
+        head.position.y = 1.1;
+        g.add(head);
+
+        // Eyes
+        const eyeMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
+        const lE = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.05), eyeMat);
+        lE.position.set(-0.12, 1.15, 0.25);
+        g.add(lE);
+        const rE = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.05), eyeMat);
+        rE.position.set(0.12, 1.15, 0.25);
+        g.add(rE);
+
+        // Pickaxe
+        const pickMat = new THREE.MeshLambertMaterial({ color: 0x808080 });
+        const pick = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.1, 0.1), pickMat);
+        pick.position.set(0.4, 0.5, 0.2);
+        pick.rotation.z = -0.3;
+        g.add(pick);
+
+        // Legs
+        const legMat = new THREE.MeshLambertMaterial({ color: 0x1a237e });
+        const ll = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.5, 0.25), legMat);
+        ll.position.set(-0.15, -0.25, 0);
+        g.add(ll);
+        const rl = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.5, 0.25), legMat);
+        rl.position.set(0.15, -0.25, 0);
+        g.add(rl);
+
+        // Arms
+        const armMat = new THREE.MeshLambertMaterial({ color: 0x4a90d9 });
+        const la = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.6, 0.2), armMat);
+        la.position.set(-0.45, 0.3, 0);
+        la.rotation.z = 0.2;
+        g.add(la);
+        const ra = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.6, 0.2), armMat);
+        ra.position.set(0.45, 0.3, 0);
+        ra.rotation.z = -0.2;
+        g.add(ra);
+
+        g.position.set(player.x, player.y - 0.9, player.z);
+        scene.add(g);
+        steveMesh = g;
+    }
+
+    function updateSteve() {
+        if (steveMesh) steveMesh.position.set(player.x, player.y - 0.9, player.z);
+    }
+
+    // ==================== GAME LOGIC ====================
+    function updatePlayer() {
+        if (!gameOn) return;
+
+        let mx = 0, mz = 0;
+        if (keys['ArrowUp'] || keys['w']) mz = -1;
+        if (keys['ArrowDown'] || keys['s']) mz = 1;
+        if (keys['ArrowLeft'] || keys['a']) mx = -1;
+        if (keys['ArrowRight'] || keys['d']) mx = 1;
+
+        if (mx || mz) {
+            const l = Math.sqrt(mx * mx + mz * mz);
+            player.x += (mx / l) * CONFIG.SPEED;
+            player.z += (mz / l) * CONFIG.SPEED;
+        }
+
+        if ((keys[' '] || keys['Spacebar']) && player.onGround) {
+            player.vy = CONFIG.JUMP;
+            player.onGround = false;
+        }
+
+        player.vy -= CONFIG.GRAVITY;
+        player.y += player.vy;
+
+        const gy = getGround(player.x, player.z);
+        if (player.y <= gy + CONFIG.PLAYER_H) {
+            player.y = gy + CONFIG.PLAYER_H;
+            player.vy = 0;
+            player.onGround = true;
+        }
+
+        if (player.y < -10) { player.y = 50; player.vy = 0; }
+
+        camera.position.set(player.x, player.y + 0.5, player.z);
+        updateSteve();
+        updateChunks();
+        updateHUD();
+        updateMinimap();
+    }
+
+    function getGround(x, z) {
+        for (let y = CONFIG.WORLD_H - 1; y >= 0; y--) {
+            const b = getB(Math.floor(x), y, Math.floor(z));
+            if (b && b !== 7) return y + 1;
+        }
+        return 0;
+    }
+
+    function updateDayNight() {
+        if (!gameOn) return;
+        gameMs += 16;
+        const cycleMs = CONFIG.DAY_MS * 2;
+        const cyclePos = (gameMs % cycleMs) / cycleMs;
+
+        isNight = cyclePos > 0.5;
+        const dayProgress = isNight ? (cyclePos - 0.5) * 2 : cyclePos * 2;
+
+        if (!isNight && Math.floor(gameMs / (CONFIG.DAY_MS * 2)) + 1 !== dayNum) {
+            dayNum = Math.floor(gameMs / (CONFIG.DAY_MS * 2)) + 1;
+        }
+
+        // Sky color
+        const skyMat = scene.children.find(c => c.geometry && c.geometry.type === 'SphereGeometry')?.material;
+        if (skyMat) {
+            if (isNight) {
+                skyMat.uniforms.topColor.value.setHex(0x001133);
+                skyMat.uniforms.bottomColor.value.setHex(0x000511);
+            } else {
+                skyMat.uniforms.topColor.value.setHex(0x0077ff);
+                skyMat.uniforms.bottomColor.value.setHex(0x87ceeb);
+            }
+        }
+
+        // Fog
+        scene.fog.color.setHex(isNight ? 0x000511 : 0x87ceeb);
+
+        // Sun position
+        if (sun) {
+            sun.position.y = Math.cos(dayProgress * Math.PI * 2) * 200;
+            sun.position.x = Math.sin(dayProgress * Math.PI * 2) * 200;
+        }
+
+        document.getElementById('day-indicator').textContent = isNight ? '🌙' : '☀️';
+        document.getElementById('timeDisplay').textContent = (isNight ? '🌙 Night ' : '☀️ Day ') + dayNum;
+    }
+
+    function updateHUD() {
+        document.getElementById('coords').textContent = `X:${Math.floor(player.x)} Y:${Math.floor(player.y)} Z:${Math.floor(player.z)}`;
+    }
+
+    function updateMinimap() {
+        const canvas = document.getElementById('minimapCanvas');
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = isNight ? '#000011' : '#87ceeb';
+        ctx.fillRect(0, 0, 150, 150);
+
+        const scale = 2;
+        const px = Math.floor(player.x), pz = Math.floor(player.z);
+
+        for (let dx = -75; dx < 75; dx += scale) {
+            for (let dz = -75; dz < 75; dz += scale) {
+                const b = getB(px + dx, getGround(px + dx, pz + dz), pz + dz);
+                if (b) {
+                    const info = CONFIG.BLOCKS[b - 1];
+                    ctx.fillStyle = info ? '#' + info.color.toString(16).padStart(6, '0') : '#888';
+                    ctx.fillRect(75 + dx, 75 + dz, scale, scale);
+                }
+            }
+        }
+
+        // Player dot
+        ctx.fillStyle = '#ff0000';
+        ctx.fillRect(73, 73, 4, 4);
+    }
+
+    function onClick(e) {
+        if (!gameOn) return;
+        const mx = Math.floor(player.x);
+        const my = Math.floor(player.y + 1);
+        const mz = Math.floor(player.z);
+
+        if (e.button === 0) { // Break
+            for (let dy = 2; dy >= -3; dy--) for (let dx = -2; dx <= 2; dx++) for (let dz = -2; dz <= 2; dz++) {
+                const b = getB(mx + dx, my + dy, mz + dz);
+                if (b) { blocks.delete(`${mx + dx},${my + dy},${mz + dz}`); rebuildMeshes(); return; }
+            }
+        } else if (e.button === 2) { // Place
+            const b = CONFIG.BLOCKS[selectedBlock];
+            if (b) {
+                for (let dy = 2; dy >= -3; dy--) for (let dx = -2; dx <= 2; dx++) for (let dz = -2; dz <= 2; dz++) {
+                    if (!getB(mx + dx, my + dy, mz + dz)) {
+                        setB(mx + dx, my + dy, mz + dz, b.id);
+                        rebuildMeshes();
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+    function startGame() {
+        gameOn = true;
+        document.getElementById('instructions').style.display = 'none';
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        updateDayNight();
+        updatePlayer();
+        renderer.render(scene, camera);
+    }
+
+    // Start
+    init();
+    </script>
+</body>
+</html>
