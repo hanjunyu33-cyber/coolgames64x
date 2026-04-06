@@ -39,13 +39,15 @@
         .info-box p { font-size: 1.1rem; font-weight: 600; color: white; }
         .faq-section { background: rgba(255,255,255,0.05); border-radius: 25px; padding: 40px; border: 1px solid rgba(255,255,255,0.1); }
         .faq-section h2 { font-size: 1.5rem; margin-bottom: 25px; color: #667eea; text-align: center; }
+        .comments-section { background: rgba(255,255,255,0.05); border-radius: 25px; padding: 40px; border: 1px solid rgba(255,255,255,0.1); margin-top: 30px; }
+        .comments-section h2 { font-size: 1.5rem; margin-bottom: 15px; color: #667eea; text-align: center; }
         .faq-item { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); }
         .faq-item:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
         .faq-item h3 { font-size: 1.1rem; margin-bottom: 10px; color: #ffd700; }
         .faq-item p { color: rgba(255,255,255,0.7); line-height: 1.7; }
         .footer { background: rgba(0,0,0,0.3); padding: 50px 30px 25px; margin-top: 40px; text-align: center; }
         .footer p { color: rgba(255,255,255,0.4); font-size: 0.85rem; }
-        @media (max-width: 768px) { .header-content { flex-direction: column; gap: 12px; } .nav-links { gap: 12px; font-size: 0.85rem; } .contact-card { padding: 30px; } .email-btn { padding: 15px 30px; font-size: 1.1rem; } }
+        @media (max-width: 768px) { .header-content { flex-direction: column; gap: 12px; } .nav-links { gap: 12px; font-size: 0.85rem; } .contact-card { padding: 30px; } }
     </style>
 </head>
 <body>
@@ -132,6 +134,12 @@
                 <p>Yes! All games on Cool Games are 100% free to play. We make money from ads to keep the site running.</p>
             </div>
         </div>
+        
+        <div class="comments-section">
+            <h2>💭 Game Wishes</h2>
+            <p style="color: rgba(255,255,255,0.7); margin-bottom: 25px;">Have an idea for a new game? Leave it here and we might add it!</p>
+            <div id="utterances-container"></div>
+        </div>
     </div>
     
     <footer class="footer">
@@ -148,6 +156,15 @@
                 }, 3000);
             });
         }
+    </script>
+    
+    <script src="https://utteranc.es/client.js"
+      repo="hanjunyu33-cyber/coolgames64x"
+      issue-term="pathname"
+      label="💭 Game Wishes"
+      theme="github-dark"
+      crossorigin="anonymous"
+      async>
     </script>
 </body>
 </html>
