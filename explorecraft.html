@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ExploreCraft - Cool Games</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { overflow: hidden; font-family: Arial, sans-serif; }
+        canvas { display: block; }
+        #hud {
+            position: fixed; top: 10px; left: 10px; color: white;
+            font-size: 14px; text-shadow: 2px 2px 4px black; z-index: 100;
+            background: rgba(0,0,0,0.4); padding: 10px; border-radius: 8px;
+        }
+        #hud .stat { display: flex; align-items: center; gap: 6px; margin: 3px 0; }
+        #hud .emoji { font-size: 18px; }
+        #hud .count { font-weight: bold; min-width: 30px; }
+        #hotbar {
+            position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 4px; background: rgba(0,0,0,0.7); padding: 8px;
+            border-radius: 8px; border: 3px solid #555; z-index: 100;
+        }
+        .slot {
+            width: 45px; height: 45px; background: rgba(80,80,80,0.8);
+            border: 3px solid #444; border-radius: 4px;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 24px; cursor: pointer; transition: all 0.1s;
+        }
+        .slot.sel { border-color: #fff; background: rgba(120,120,120,0.9); transform: scale(1.1); }
+        #crosshair {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 20px; height: 20px; z-index: 100; pointer-events: none;
+        }
+        #crosshair::before, #crosshair::after {
+            content: ''; position: absolute; background: white; box-shadow: 0 0 3px black;
+        }
+        #crosshair::before { width: 3px; height: 20px; left: 8.5px; top: 0; }
+        #crosshair::after { width: 20px; height: 3px; top: 8.5px; left: 0; }
+        #start {
+            position: fixed; inset: 0;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: white; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            z-index: 300; text-align: center; padding: 20px;
+        }
+        #start h1 { font-size: 3rem; margin-bottom: 10px; text-shadow: 0 0 30px #667eea; }
+        #start h2 { font-size: 1.2rem; margin-bottom: 30px; opacity: 0.8; color: #ffd700; }
+        #start .subtitle { font-size: 1rem; margin-bottom: 30px; opacity: 0.7; }
+        #start .controls { background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; margin-bottom: 25px; }
+        #start .controls p { margin: 8px 0; font-size: 15px; }
+        #start .controls .key { background: #333; padding: 4px 10px; border-radius: 5px; border: 1px solid #555; }
+        #start .tip { background: rgba(255,215,0,0.2); padding: 15px; border-radius: 10px; margin-bottom: 25px; border: 2px solid #ffd700; }
+        #start .tip p { font-size: 14px; }
+        #start button {
+            padding: 15px 50px; font-size: 20px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none; color: white; border-radius: 30px; cursor: pointer;
+            font-weight: bold; transition: all 0.3s;
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        #start button:hover { transform: scale(1.05); box-shadow: 0 5px 30px rgba(102, 126, 234, 0.6); }
+        #depth { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); color: white; font-size: 16px; text-shadow: 2px 2px 4px black; z-index: 100; }
+        #dayNight { position: fixed; top: 10px; right: 10px; font-size: 40px; z-index: 100; }
+        #ores {
+            position: fixed; top: 80px; right: 10px;
+            background: rgba(0,0,0,0.6); padding: 10px; border-radius: 10px;
+            color: white; font-size: 12px; z-index: 100; min-width: 120px;
+        }
+        #ores h3 { margin-bottom: 8px; font-size: 14px; color: #ffd700; }
+        #ores .ore { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
+        #ores .ore-emoji { font-size: 16px; }
+        #ores .ore-count { margin-left: auto; font-weight: bold; }
+        #found-msg {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 30px; color: #ffd700; text-shadow: 0 0 20px #ffd700;
+            z-index: 200; pointer-events: none; opacity: 0; transition: opacity 0.3s;
+        }
+        #found-msg.show { opacity: 1; }
+        #loading {
+            position: fixed; inset: 0;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: white; z-index: 400; transition: opacity 0.5s;
+        }
+        #loading.hidden { opacity: 0; pointer-events: none; }
+        #loading h1 { font-size: 2.5rem; margin-bottom: 20px; }
+        #loading .bar { width: 300px; height: 20px; background: rgba(255,255,255,0.2); border-radius: 10px; overflow: hidden; }
+        #loading .fill { height: 100%; background: linear-gradient(90deg, #667eea, #764ba2); width: 0%; transition: width 0.3s; }
+    </style>
+</head>
+<body>
+    <div id="loading"><h1>⛏️ ExploreCraft</h1><div class="bar"><div class="fill" id="loadFill"></div></div></div>
+
+    <div id="start">
+        <h1>⛏️ ExploreCraft</h1>
+        <h2>💎 Mine for Rare Ores! 💎</h2>
+        <div class="controls">
+            <p><span class="key">↑ ↓ ← →</span> or <span class="key">WASD</span> = Move</p>
+            <p><span class="key">Space</span> = Jump</p>
+            <p><span class="key">1-9</span> = Select Block</p>
+            <p><span class="key">Left Click</span> = Mine Block</p>
+            <p><span class="key">Right Click</span> = Place Block</p>
+        </div>
+        <div class="tip">
+            <p>💎 <b>Diamonds</b> are the rarest - found very deep!</p>
+            <p>🥇 <b>Gold</b> is also deep - great for making tools!</p>
+            <p>⛏️ <b>Coal</b> is everywhere - you'll need lots!</p>
+        </div>
+        <button onclick="startGame()">🎮 START EXPLORING!</button>
+    </div>
+
+    <canvas id="c"></canvas>
+    <div id="hud">
+        <div id="time">☀️ Day 1</div>
+        <div id="pos">X: 0 Y: 0 Z: 0</div>
+    </div>
+    <div id="dayNight">☀️</div>
+    <div id="depth">Depth: 0</div>
+    <div id="ores">
+        <h3>📦 Ores Found</h3>
+        <div class="ore"><span class="ore-emoji">�ite</span><span>Coal</span><span class="ore-count" id="coalCount">0</span></div>
+        <div class="ore"><span class="ore-emoji">🟫</span><span>Iron</span><span class="ore-count" id="ironCount">0</span></div>
+        <div class="ore"><span class="ore-emoji">🟨</span><span>Gold</span><span class="ore-count" id="goldCount">0</span></div>
+        <div class="ore"><span class="ore-emoji">💎</span><span>Diamond</span><span class="ore-count" id="diamondCount">0</span></div>
+    </div>
+    <div id="found-msg"></div>
+    <div id="hotbar"></div>
+    <div id="crosshair"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+    const BLOCKS = [
+        {id:1,name:'Grass',c:0x5d8c3e,drop:null},{id:2,name:'Dirt',c:0x8b6914,drop:null},
+        {id:3,name:'Stone',c:0x606060,drop:'stone'},{id:4,name:'Cobble',c:0x555555,drop:null},
+        {id:5,name:'Wood',c:0x8b4513,drop:null},{id:6,name:'Leaves',c:0x228b22,drop:null,a:true},
+        {id:7,name:'Sand',c:0xf4d03f,drop:null},{id:8,name:'Water',c:0x3498db,drop:null,a:true},
+        {id:9,name:'Coal',c:0x1a1a1a,drop:'coal',emissive:0x111111,shine:true},{id:10,name:'Iron',c:0xd4a574,drop:'iron',emissive:0x8b6914,shine:true},
+        {id:11,name:'Gold',c:0xffd700,drop:'gold',emissive:0xffa500,shine:true},{id:12,name:'Diamond',c:0x00ffff,drop:'diamond',emissive:0x00ffff,shine:true}
+    ];
+    const ORE_NAMES = {coal:'ite', iron:'🟫', gold:'🟨', diamond:'💎'};
+    const DAY = 15*60000;
+
+    let scene, cam, rend, player = {x:8,y:30,z:8,vy:0,g:true,collected:{coal:0,iron:0,gold:0,diamond:0}}, sel=0, on=false;
+    let keys={}, meshes=[], steve, sun, time=0, day=1, night=false;
+    let blocks=new Map(), skyMat;
+    let lastCX=-999, lastCZ=-999;
+
+    function rand(s){let x=Math.sin(s)*10000;return x-Math.floor(x);}
+    function noise2D(x,y){
+        let ix=Math.floor(x),iy=Math.floor(y),fx=x-ix,fy=y-iy;
+        let a=rand(ix+iy*57),b=rand(ix+1+iy*57),c=rand(ix+(iy+1)*57),d=rand(ix+1+(iy+1)*57);
+        let ux=fx*fx*(3-2*fx),uy=fy*fy*(3-2*fy);
+        return a+(b-a)*ux+(c-a)*uy+(a-b-c+d)*ux*uy;
+    }
+    function noise3D(x,y,z){
+        let s=x+y*57+z*131;
+        return rand(s);
+    }
+
+    function init(){
+        scene=new THREE.Scene();
+        scene.fog=new THREE.Fog(0x87ceeb,20,120);
+        cam=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,0.1,500);
+        cam.position.set(8,35,8);
+        rend=new THREE.WebGLRenderer({canvas:document.getElementById('c'),antialias:true});
+        rend.setSize(innerWidth,innerHeight);
+        rend.setClearColor(0x87ceeb);
+        scene.add(new THREE.AmbientLight(0xffffff,0.5));
+        sun=new THREE.DirectionalLight(0xffffff,0.8);
+        sun.position.set(100,150,100);
+        scene.add(sun);
+        makeSky();
+        genWorld(0,0);
+        spawnP();
+        setupHotbar();
+        renderSteve();
+        addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();rend.setSize(innerWidth,innerHeight);});
+        addEventListener('keydown',e=>{keys[e.key]=true;if(e.key>='1'&&e.key<='9') selBlock(parseInt(e.key)-1);});
+        addEventListener('keyup',e=>keys[e.key]=false);
+        addEventListener('click',e=>on&&onClick(e,0));
+        addEventListener('contextmenu',e=>{e.preventDefault();on&&onClick(e,1);});
+        loop();
+        setTimeout(()=>{document.getElementById('loading').classList.add('hidden');},800);
+    }
+
+    function makeSky(){
+        let g=new THREE.SphereGeometry(400,32,32);
+        skyMat=new THREE.ShaderMaterial({
+            uniforms:{t:{value:new THREE.Color(0x0077ff)},b:{value:new THREE.Color(0x87ceeb)}},
+            vertexShader:`varying vec3 v;void main(){v=(modelMatrix*vec4(pos,1)).xyz;gl_Position=projectionMatrix*modelViewMatrix*vec4(pos,1);}`,
+            fragmentShader:`uniform vec3 t,b;varying vec3 v;void main(){float h=normalize(v).y;gl_FragColor=vec4(mix(b,t,max(h,0.)),1.);}`,
+            side:THREE.BackSide
+        });
+        scene.add(new THREE.Mesh(g,skyMat));
+    }
+
+    function setB(x,y,z,t){blocks.set(`${Math.floor(x)},${Math.floor(y)},${Math.floor(z)}`,t);}
+    function getB(x,y,z){return blocks.get(`${Math.floor(x)},${Math.floor(y)},${Math.floor(z)}`);}
+
+    function genWorld(cx,cz){
+        let CS=32,range=3;
+        for(let dx=-range;dx<=range;dx++) for(let dz=-range;dz<=range;dz++){
+            let nx=cx+dx,nz=cz+dz;
+            let key=`${nx},${nz}`;
+            if(player.generated&&player.generated.has(key)) continue;
+            if(!player.generated) player.generated=new Set();
+            player.generated.add(key);
+            genChunk(nx,nz);
+        }
+    }
+
+    function genChunk(cx,cz){
+        let CS=32;
+        for(let x=0;x<CS;x++) for(let z=0;z<CS;z++){
+            let wx=cx*CS+x,wz=cz*CS+z;
+            let h=Math.floor(noise2D(wx*.015,wz*.015)*20+noise2D(wx*.05,wz*.05)*8+18);
+            for(let y=0;y<=h;y++){
+                if(y===h) setB(wx,y,wz,1);
+                else if(y>h-4) setB(wx,y,wz,2);
+                else {
+                    let n=noise3D(wx*.1,y*.1,wz*.1);
+                    if(y<h-8&&n>.7){
+                        let depth=h-y;
+                        if(depth>35) setB(wx,y,wz,12);
+                        else if(depth>25) setB(wx,y,wz,11);
+                        else if(depth>15) setB(wx,y,wz,10);
+                        else setB(wx,y,wz,9);
+                    } else setB(wx,y,wz,3);
+                }
+            }
+            if(h<12){for(let y=6;y<h;y++) setB(wx,y,wz,8);}
+            if(h<15&&h>10) for(let y=h-3;y<h;y++) if(getB(wx,y,wz)===2) setB(wx,y,wz,7);
+            if(noise2D(wx*.4,wz*.4)>.55&&h>16){
+                let th=4+Math.floor(rand(wx*100+wz)*3);
+                for(let t=1;t<th;t++) setB(wx,h+t,wz,5);
+                for(let lx=-2;lx<=2;lx++) for(let lz=-2;lz<=2;lz++) for(let ly=0;ly<3;ly++)
+                    if(Math.abs(lx)+Math.abs(lz)+Math.abs(ly)<5) setB(wx+lx,h+th+ly,wz+lz,6);
+            }
+            // Caves
+            for(let y=5;y<h-5;y++){
+                if(noise3D(wx*.08,y*.1,wz*.08)>.65){
+                    let caveH=2+Math.floor(rand(wx*50+y*20+wz)*3);
+                    for(let cy=0;cy<caveH;cy++) if(y+cy<h-2) setB(wx,y+cy,wz,0);
+                }
+            }
+        }
+    }
+
+    function spawnP(){
+        for(let y=60;y>0;y--){if(getB(8,y,8)){player.y=y+2;break;}}
+        renderSteve();
+    }
+
+    function buildMesh(){
+        meshes.forEach(m=>scene.remove(m)); meshes=[];
+        let geo=new THREE.BoxGeometry(1,1,1);
+        let cx=Math.floor(player.x/CS),cz=Math.floor(player.z/CS);
+        if(cx===lastCX&&cz===lastCZ) return;
+        lastCX=cx; lastCZ=cz;
+        genWorld(cx,cz);
+        let r=48;
+        for(let x=Math.floor(player.x)-r;x<Math.floor(player.x)+r;x++) for(let y=0;y<70;y++) for(let z=Math.floor(player.z)-r;z<Math.floor(player.z)+r;z++){
+            let t=getB(x,y,z);
+            if(t&&t!==8){
+                let b=BLOCKS[t-1];
+                if(b){
+                    let mat=new THREE.MeshLambertMaterial({
+                        color:b.c,
+                        transparent:b.a||false,
+                        opacity:b.a?.5:1,
+                        emissive:b.emissive||0x000000,
+                        emissiveIntensity:b.shine?.15:0
+                    });
+                    let m=new THREE.Mesh(geo,mat);
+                    m.position.set(x+.5,y+.5,z+.5);
+                    scene.add(m);
+                    meshes.push(m);
+                }
+            }
+        }
+    }
+
+    function renderSteve(){
+        if(steve) scene.remove(steve);
+        let g=new THREE.Group();
+        let bodyM=new THREE.MeshLambertMaterial({color:0x4a90d9});
+        let headM=new THREE.MeshLambertMaterial({color:0xffdbac});
+        let legM=new THREE.MeshLambertMaterial({color:0x1a237e});
+        let body=new THREE.Mesh(new THREE.BoxGeometry(.6,.8,.3),bodyM);body.position.y=.4;g.add(body);
+        let head=new THREE.Mesh(new THREE.BoxGeometry(.5,.5,.5),headM);head.position.y=1.1;g.add(head);
+        let eyeM=new THREE.MeshLambertMaterial({color:0xfff});
+        let lE=new THREE.Mesh(new THREE.BoxGeometry(.1,.1,.05),eyeM);lE.position.set(-.12,1.15,.25);g.add(lE);
+        let rE=new THREE.Mesh(new THREE.BoxGeometry(.1,.1,.05),eyeM);rE.position.set(.12,1.15,.25);g.add(rE);
+        let pick=new THREE.Mesh(new THREE.BoxGeometry(.7,.1,.1),new THREE.MeshLambertMaterial({color:0xaaa}));
+        pick.position.set(.4,.5,.2);pick.rotation.z=-.3;g.add(pick);
+        let ll=new THREE.Mesh(new THREE.BoxGeometry(.25,.5,.25),legM);ll.position.set(-.15,-.25,0);g.add(ll);
+        let rl=new THREE.Mesh(new THREE.BoxGeometry(.25,.5,.25),legM);rl.position.set(.15,-.25,0);g.add(rl);
+        g.position.set(player.x,player.y-.9,player.z);
+        scene.add(g);
+        steve=g;
+    }
+
+    function setupHotbar(){
+        let h=document.getElementById('hotbar');
+        h.innerHTML='';
+        BLOCKS.slice(0,9).forEach((b,i)=>{
+            let s=document.createElement('div');
+            s.className='slot'+(i===sel?' sel':'');
+            s.textContent=['🟩','🟫','⬜','🪨','🟫','🌿','🟨','💧','ite'][i];
+            s.onclick=()=>selBlock(i);
+            h.appendChild(s);
+        });
+    }
+
+    function selBlock(i){sel=i;document.querySelectorAll('.slot').forEach((s,j)=>s.classList.toggle('sel',j===i));}
+
+    function updateP(){
+        if(!on) return;
+        let mx=0,mz=0;
+        if(keys['ArrowUp']||keys['w']||keys['W']) mz=-1;
+        if(keys['ArrowDown']||keys['s']||keys['S']) mz=1;
+        if(keys['ArrowLeft']||keys['a']||keys['A']) mx=-1;
+        if(keys['ArrowRight']||keys['d']||keys['D']) mx=1;
+        if(mx||mz){let l=Math.sqrt(mx*mx+mz*mz);player.x+=(mx/l)*.15;player.z+=(mz/l)*.15;}
+        if((keys[' ']||keys['Space'])&&player.g){player.vy=.22;player.g=false;}
+        player.vy-=.015;player.y+=player.vy;
+        let gy=getGround(player.x,player.z);
+        if(player.y<=gy+1.8){player.y=gy+1.8;player.vy=0;player.g=true;}
+        if(player.y<-20){player.y=50;player.vy=0;}
+        cam.position.set(player.x,player.y+2,player.z);
+        if(steve) steve.position.set(player.x,player.y-.9,player.z);
+        buildMesh();
+        let depth=Math.max(0,50-Math.floor(player.y));
+        document.getElementById('depth').textContent=`⛏️ Depth: ${depth}`;
+        document.getElementById('pos').textContent=`X:${Math.floor(player.x)} Y:${Math.floor(player.y)} Z:${Math.floor(player.z)}`;
+    }
+
+    function getGround(x,z){
+        for(let y=69;y>=0;y--){let b=getB(Math.floor(x),y,Math.floor(z));if(b&&b!==8&&b!==0)return y+1;}
+        return 0;
+    }
+
+    function updateDay(){
+        if(!on) return;
+        time+=16;
+        let cyc=DAY*2,pos=(time%cyc)/cyc;
+        night=pos>.5;
+        let dp=night?(pos-.5)*2:pos*2;
+        skyMat.uniforms.t.value.setHex(night?0x001133:0x0077ff);
+        skyMat.uniforms.b.value.setHex(night?0x000511:0x87ceeb);
+        if(sun){sun.position.y=Math.cos(dp*Math.PI*2)*150;sun.intensity=night?.3:.8;}
+        scene.fog.color.setHex(night?0x001133:0x87ceeb);
+        document.getElementById('dayNight').textContent=night?'🌙':'☀️';
+        day=Math.floor(time/cyc)+1;
+        document.getElementById('time').textContent=(night?'🌙 ':'☀️ ')+`Day ${day}`;
+    }
+
+    function showFound(name,emoji){
+        let el=document.getElementById('found-msg');
+        el.textContent=`${emoji} Found ${name}! ${emoji}`;
+        el.classList.add('show');
+        setTimeout(()=>el.classList.remove('show'),1500);
+    }
+
+    function onClick(e,btn){
+        let mx=Math.floor(player.x),my=Math.floor(player.y+1),mz=Math.floor(player.z);
+        if(btn===0){
+            for(let dy=3;dy>=-2;dy--) for(let dx=-2;dx<=2;dx++) for(let dz=-2;dz<=2;dz++){
+                let b=getB(mx+dx,my+dy,mz+dz);
+                if(b&&b!==8&&b!==0){
+                    let info=BLOCKS[b-1];
+                    if(info&&info.drop){
+                        player.collected[info.drop]++;
+                        document.getElementById(info.drop+'Count').textContent=player.collected[info.drop];
+                        showFound(info.name,info.id===12?'💎':info.id===11?'🟨':info.id===10?'🟫':'ite');
+                    }
+                    blocks.delete(`${mx+dx},${my+dy},${mz+dz}`);
+                    buildMesh();
+                    return;
+                }
+            }
+        } else {
+            let bl=BLOCKS[sel];
+            for(let dy=3;dy>=-2;dy--) for(let dx=-2;dx<=2;dx++) for(let dz=-2;dz<=2;dz++){
+                if(!getB(mx+dx,my+dy,mz+dz)){setB(mx+dx,my+dy,mz+dz,bl.id);buildMesh();return;}
+            }
+        }
+    }
+
+    function startGame(){
+        on=true;
+        document.getElementById('start').style.display='none';
+        buildMesh();
+    }
+
+    function loop(){
+        requestAnimationFrame(()=>{updateDay();updateP();rend.render(scene,cam);loop();});
+    }
+
+    init();
+    </script>
+</body>
+</html>
